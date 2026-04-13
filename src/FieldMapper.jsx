@@ -87,10 +87,27 @@ export default function FieldMapper({
 
   const appendTagToPattern = (tag) => {
     const token = `{${tag}}`;
-    const nextPattern = filenamePattern
-      ? `${filenamePattern} ${token}`
-      : token;
-    onFilenamePatternChange(nextPattern);
+    onFilenamePatternChange((prev) => (prev ? `${prev} ${token}` : token));
+  };
+
+  const handleDragStart = (e, tag) => {
+    e.dataTransfer.setData('text/plain', `{${tag}}`);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const tag = e.dataTransfer.getData('text/plain');
+    const input = e.target;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const text = input.value;
+    const newText = `${text.substring(0, start)}${tag}${text.substring(end)}`;
+    onFilenamePatternChange(newText);
+    input.focus();
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
   };
 
   return (
@@ -160,11 +177,11 @@ export default function FieldMapper({
           </defs>
         </svg>
 
-        <div className="relative grid gap-6 md:grid-cols-[minmax(0,1fr)_220px_minmax(0,1fr)]">
+        <div className="relative grid gap-6 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
           <div className="space-y-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-indigo-200">Tags do modelo</p>
-              <p className="mt-1 text-xs text-slate-300">Marcadores detectados automaticamente no .docx</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-200">Tags do modelo</p>
+              <p className="mt-1 text-xs text-slate-300">Marcadores detectados no .docx</p>
             </div>
             {templateTags.map((tag) => {
               const mappedHeader = fieldMap[tag];
@@ -210,17 +227,12 @@ export default function FieldMapper({
             })}
           </div>
 
-          <div className="hidden items-center justify-center md:flex">
-            <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-center backdrop-blur-sm">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-300">Fluxo</p>
-              <p className="mt-1 text-sm font-medium text-white">Word → Excel</p>
-            </div>
-          </div>
+          <div className="hidden items-center justify-center md:flex" />
 
           <div className="space-y-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-200">Campos da planilha</p>
-              <p className="mt-1 text-xs text-slate-300">Colunas disponíveis no arquivo Excel</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-200">Colunas da planilha</p>
+              <p className="mt-1 text-xs text-slate-300">Campos disponíveis no Excel</p>
             </div>
             {excelHeaders.map((header) => {
               const linkedTags = templateTags.filter((tag) => fieldMap[tag] === header);
@@ -255,17 +267,21 @@ export default function FieldMapper({
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-          <p className="text-xs font-medium text-slate-600">Ligações criadas</p>
-          <p className="mt-1 text-xs text-slate-500">
-            Revise aqui o que já foi conectado antes de seguir para a geração. Se algo estiver faltando, volte ao mapa e complete a ligação.
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+          <p className="text-sm font-semibold text-slate-200">Ligações criadas</p>
+          <p className="mt-1 text-xs text-slate-400">
+            Revise as conexões feitas. Se algo estiver faltando, volte ao mapa.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {templateTags.filter((tag) => fieldMap[tag]).length > 0 ? (
               templateTags.filter((tag) => fieldMap[tag]).map((tag) => (
-                <span key={tag} className="rounded-full border border-indigo-200 bg-white px-3 py-1 text-xs text-slate-700">
-                  {`{${tag}} → ${fieldMap[tag]}`}
+                <span key={tag} className="flex items-center gap-1.5 rounded-full bg-indigo-500/15 px-3 py-1 text-xs font-medium text-indigo-200">
+                  <span className="text-fuchsia-200">{`{${tag}}`}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                  <span className="text-violet-200">{fieldMap[tag]}</span>
                 </span>
               ))
             ) : (
@@ -274,38 +290,36 @@ export default function FieldMapper({
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-          <label className="mb-2 block text-xs font-medium text-slate-600">
+        <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+          <label className="text-sm font-semibold text-slate-200">
             Padrão do nome do arquivo
           </label>
-          <p className="mb-3 text-xs text-slate-500">
-            Monte o nome exatamente no formato que você precisa. Você pode combinar texto fixo com qualquer tag detectada no Word.
+          <p className="mt-1 mb-3 text-xs text-slate-400">
+            Arraste as tags abaixo para montar o nome do arquivo.
           </p>
           <input
             type="text"
             value={filenamePattern}
             onChange={(e) => onFilenamePatternChange(e.target.value)}
-            placeholder="OFICIO {numero}.2026.FEST - {paroquia}"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            placeholder="Ex: DOCUMENTO {numero} - {nome}"
+            className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-200 shadow-sm transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none"
           />
-          <p className="mt-2 text-xs text-slate-500">
-            Exemplo prático: OFICIO {`{numero}`}.2026.FEST - {`{paroquia}`}
-          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {templateTags.map((tag) => (
               <button
                 key={tag}
                 type="button"
+                draggable
+                onDragStart={(e) => handleDragStart(e, tag)}
                 onClick={() => appendTagToPattern(tag)}
-                className="rounded-full border border-indigo-200 bg-white px-2.5 py-1 text-xs font-medium text-indigo-700 transition hover:bg-indigo-50"
+                className="cursor-grab rounded-full border border-indigo-400/20 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-200 transition hover:bg-indigo-500/20 active:cursor-grabbing"
               >
                 {`{${tag}}`}
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-slate-500">
-            {Object.values(fieldMap).filter(Boolean).length} de {templateTags.length} tag(s) conectada(s)
-          </p>
         </div>
       </div>
     </div>

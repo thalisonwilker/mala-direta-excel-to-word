@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import FileUpload from './FileUpload';
 import ExcelUpload from './ExcelUpload';
 import FieldMapper from './FieldMapper';
@@ -77,6 +77,15 @@ export default function App() {
     });
   }, [templateTags]);
 
+  useEffect(() => {
+    if (excelRows.length > 0) {
+      const element = document.getElementById('step-3-mapper');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }, [excelRows]);
+
   const mappedCount = Object.values(fieldMap).filter(Boolean).length;
 
   const handleGenerate = useCallback(async () => {
@@ -130,12 +139,12 @@ export default function App() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-lg font-semibold tracking-tight text-white">DocBridge Flow</h1>
+                <h1 className="text-lg font-semibold tracking-tight text-white">Mapeador de Documentos</h1>
                 <p className="text-xs text-slate-300">Modelo Word, planilha Excel e geração em lote no navegador</p>
               </div>
             </div>
             <div className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-slate-300 md:block">
-              Word + Excel + Mapa Visual + Nomeação dinâmica
+              Word → Excel → Mapa Visual → Lote
             </div>
           </div>
         </header>
@@ -161,27 +170,35 @@ export default function App() {
 
             <div className="relative rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04))] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
               <div className="absolute left-8 top-8 h-3 w-3 rounded-full bg-fuchsia-400 shadow-[0_0_25px_rgba(232,121,249,0.9)]" />
-              <div className="absolute bottom-16 right-10 h-3 w-3 rounded-full bg-violet-400 shadow-[0_0_25px_rgba(167,139,250,0.9)]" />
+              <div className="absolute bottom-8 right-10 h-3 w-3 rounded-full bg-violet-400 shadow-[0_0_25px_rgba(167,139,250,0.9)]" />
               <svg className="absolute inset-0 h-full w-full" viewBox="0 0 400 260" fill="none" aria-hidden="true">
-                <path d="M92 52C152 78 143 146 205 152C276 159 279 201 338 212" stroke="rgba(255,255,255,0.9)" strokeWidth="3" strokeLinecap="round" />
+                <path d="M60 150C100 150 140 100 195 100C250 100 290 150 340 150" stroke="rgba(255,255,255,0.1)" strokeWidth="20" />
+                <path d="M60 150C100 150 140 100 195 100C250 100 290 150 340 150" stroke="url(#pulse-1)" strokeWidth="3" strokeLinecap="round" />
+                <defs>
+                  <linearGradient id="pulse-1" x1="60" x2="340" y1="150" y2="150" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="rgba(168, 85, 247, 0.8)" />
+                    <stop offset="0.5" stopColor="rgba(167, 139, 250, 0.9)" />
+                    <stop offset="1" stopColor="rgba(99, 102, 241, 0.8)" />
+                  </linearGradient>
+                </defs>
               </svg>
               <div className="relative space-y-6">
                 <div className="rounded-3xl border border-white/10 bg-[#11081f] p-5">
-                  <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Fluxo técnico</p>
+                  <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Conceito</p>
                   <p className="mt-2 text-lg font-semibold text-white">Word detecta tags, Excel fornece dados, o mapa define a lógica.</p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-2xl font-semibold text-white">1</p>
+                    <p className="text-2xl font-semibold text-fuchsia-300">Word</p>
                     <p className="mt-2 text-sm text-slate-300">Modelo com marcadores entre chaves</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-2xl font-semibold text-white">2</p>
+                    <p className="text-2xl font-semibold text-violet-300">Excel</p>
                     <p className="mt-2 text-sm text-slate-300">Planilha com colunas e linhas</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-2xl font-semibold text-white">3</p>
-                    <p className="mt-2 text-sm text-slate-300">Lote gerado em ZIP, pronto para uso</p>
+                    <p className="text-2xl font-semibold text-indigo-300">Mapa</p>
+                    <p className="mt-2 text-sm text-slate-300">Conexão visual entre os campos</p>
                   </div>
                 </div>
               </div>
@@ -197,12 +214,15 @@ export default function App() {
                   <FileUpload onFileLoaded={handleTemplateLoaded} />
                 </div>
                 {templateTags.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {templateTags.map((tag) => (
-                      <span key={tag} className="rounded-full border border-fuchsia-400/20 bg-fuchsia-500/10 px-3 py-1 text-xs font-medium text-fuchsia-100">
-                        {`{${tag}}`}
-                      </span>
-                    ))}
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-medium text-slate-300">Tags detectadas no documento:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {templateTags.map((tag) => (
+                        <span key={tag} className="rounded-full border border-fuchsia-400/20 bg-fuchsia-500/10 px-3 py-1 text-xs font-medium text-fuchsia-100">
+                          {`{${tag}}`}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </section>
@@ -225,12 +245,15 @@ export default function App() {
                   <ExcelUpload onParsed={handleExcelParsed} />
                 </div>
                 {excelHeaders.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {excelHeaders.map((header) => (
-                      <span key={header} className="rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-100">
-                        {header}
-                      </span>
-                    ))}
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-medium text-slate-300">Colunas de dados detectadas:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {excelHeaders.map((header) => (
+                        <span key={header} className="rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-100">
+                          {header}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </section>
@@ -247,7 +270,7 @@ export default function App() {
           </div>
 
           {templateTags.length > 0 && excelHeaders.length > 0 && (
-            <div className="mt-6 space-y-3">
+            <div id="step-3-mapper" className="mt-6 space-y-3">
               <section className="rounded-[28px] border border-white/10 bg-white/6 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-amber-200">Passo 3</h3>
                 <h4 className="mt-2 text-2xl font-semibold text-white">Mapa visual de campos</h4>
@@ -347,7 +370,7 @@ export default function App() {
         </main>
 
         <footer className="relative border-t border-white/10 py-5 text-center text-xs text-slate-400">
-          DocBridge Flow — automação documental genérica com Word, Excel e geração de lote no navegador.
+          Mapeador de Documentos — automação documental genérica com Word, Excel e geração de lote no navegador.
         </footer>
     </div>
   );
