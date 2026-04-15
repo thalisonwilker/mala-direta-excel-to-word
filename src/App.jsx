@@ -4,6 +4,8 @@ import ExcelUpload from './ExcelUpload';
 import FieldMapper from './FieldMapper';
 import ProgressBar from './ProgressBar';
 import { extractTemplateTags, generateDocuments } from './documentGenerator';
+import ManualDataForm from './ManualDataForm';
+import SimpleCSVInput from './SimpleCSVInput';
 
 function buildDefaultFilenamePattern(tags) {
   const numberTag = tags.find((tag) => ['numero', 'number', 'codigo', 'id'].includes(tag.toLowerCase()));
@@ -35,6 +37,8 @@ export default function App() {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
+  const [dataMode, setDataMode] = useState('excel'); // 'excel' ou 'manual'
+  const [manualHeaders, setManualHeaders] = useState([]);
 
   const handleTemplateLoaded = useCallback((buffer) => {
     setTemplateBuffer(buffer);
@@ -240,9 +244,34 @@ export default function App() {
             <div className="space-y-3">
               <section className="rounded-[28px] border border-white/10 bg-white/6 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-violet-200">Passo 2</h3>
-                <h4 className="mt-2 text-2xl font-semibold text-white">Planilha de dados</h4>
+                <h4 className="mt-2 text-2xl font-semibold text-white">Fonte de dados</h4>
+                <div className="mt-5 flex gap-3">
+                  <button
+                    className={`rounded-full px-4 py-1.5 text-xs font-semibold border transition ${dataMode === 'excel' ? 'bg-violet-600 text-white border-violet-400' : 'bg-white/10 text-violet-200 border-white/10 hover:bg-violet-500/10'}`}
+                    onClick={() => setDataMode('excel')}
+                    type="button"
+                  >
+                    Usar planilha Excel
+                  </button>
+                  <button
+                    className={`rounded-full px-4 py-1.5 text-xs font-semibold border transition ${dataMode === 'manual' ? 'bg-violet-600 text-white border-violet-400' : 'bg-white/10 text-violet-200 border-white/10 hover:bg-violet-500/10'}`}
+                    onClick={() => setDataMode('manual')}
+                    type="button"
+                  >
+                    Informar manualmente (texto)
+                  </button>
+                </div>
                 <div className="mt-5">
-                  <ExcelUpload onParsed={handleExcelParsed} />
+                  {dataMode === 'excel' ? (
+                    <ExcelUpload onParsed={handleExcelParsed} />
+                  ) : (
+                    <SimpleCSVInput
+                      onParsed={({ headers, rows }) => {
+                        setExcelHeaders(headers);
+                        setExcelRows(rows);
+                      }}
+                    />
+                  )}
                 </div>
                 {excelHeaders.length > 0 && (
                   <div className="mt-4">
